@@ -1,20 +1,21 @@
 var express = require("express");
-var bcrypt = require("bcryptjs");
-var mdAuth = require("../middlewares/authentication");
 var app = express();
-var User = require("../models/user");
+
+var Hospital = require("../models/hospital");
+var mdAuth = require("../middlewares/authentication");
 
 //Routes
 //===============================
-//GET USERS
+//GET HOSTPITALS
 //===============================
 app.get("/", mdAuth.verifyToken, (request, response, next) => {
   var from = Number(request.query.from) || 0;
 
-  User.find({}, "name email img role")
+  Hospital.find({})
     .skip(from)
     .limit(5)
-    .exec((err, users) => {
+    .populate("user", "name email")
+    .exec((err, hospitals) => {
       if (err) {
         return response.status(500).json({
           ok: false,
@@ -23,10 +24,10 @@ app.get("/", mdAuth.verifyToken, (request, response, next) => {
         });
       }
 
-      User.count({}, (err, count) => {
+      Hospital.count({}, (err, count) => {
         response.status(200).json({
           ok: true,
-          users: users,
+          users: hospitals,
           total: count,
           message: "OK",
         });
@@ -35,70 +36,18 @@ app.get("/", mdAuth.verifyToken, (request, response, next) => {
 });
 
 //===============================
-//UPDATE USER
-//===============================
-
-app.put("/:id", mdAuth.verifyToken, (request, response) => {
-  var id = request.params.id;
-
-  User.findById(id, (err, user) => {
-    var body = request.body;
-
-    if (err) {
-      return response.status(500).json({
-        ok: false,
-        message: "Error in search user",
-        errors: err,
-      });
-    }
-
-    if (!user) {
-      return response.status(400).json({
-        ok: false,
-        message: `User ${id}, not found!`,
-        errors: { message: "User not found" },
-      });
-    }
-
-    user.name = body.name;
-    user.email = body.email;
-    user.role = body.role;
-
-    user.save((err, userUpdated) => {
-      if (err) {
-        return response.status(400).json({
-          ok: false,
-          message: "Error in update user",
-          errors: err,
-        });
-      }
-
-      userUpdated.password = ":)";
-
-      response.status(200).json({
-        ok: true,
-        body: userUpdated,
-        message: "OK",
-      });
-    });
-  });
-});
-
-//===============================
-//CREATE USER
+//CREATE HOSPITAL
 //===============================
 
 app.post("/", mdAuth.verifyToken, (request, response) => {
   var body = request.body;
-  var user = new User({
+  var hospital = new Hospital({
     name: body.name,
-    email: body.email,
-    password: bcrypt.hashSync(body.password, 10),
     img: body.img,
-    role: body.role,
+    user: body.user,
   });
 
-  user.save((err, newUser) => {
+  hospital.save((err, newHospital) => {
     if (err) {
       return response.status(400).json({
         ok: false,
@@ -109,20 +58,68 @@ app.post("/", mdAuth.verifyToken, (request, response) => {
 
     response.status(201).json({
       ok: true,
-      body: newUser,
+      body: newHospital,
       message: "OK",
     });
   });
 });
 
 //===============================
-//DELETE USER
+//UPDATE HOSPITAL
+//===============================
+
+app.put("/:id", mdAuth.verifyToken, (request, response) => {
+  var id = request.params.id;
+
+  Hospital.findById(id, (err, hospital) => {
+    var body = request.body;
+
+    if (err) {
+      return response.status(500).json({
+        ok: false,
+        message: "Error in search hospital",
+        errors: err,
+      });
+    }
+
+    if (!hospital) {
+      return response.status(400).json({
+        ok: false,
+        message: `Hospital ${id}, not found!`,
+        errors: { message: "Hospital not found" },
+      });
+    }
+
+    hospital.name = body.name;
+    hospital.img = body.img;
+    hospital.user = body.user;
+
+    hospital.save((err, hospitalUpdated) => {
+      if (err) {
+        return response.status(400).json({
+          ok: false,
+          message: "Error in update hospital",
+          errors: err,
+        });
+      }
+
+      response.status(200).json({
+        ok: true,
+        body: hospitalUpdated,
+        message: "OK",
+      });
+    });
+  });
+});
+
+//===============================
+//DELETE HOSPITAL
 //===============================
 
 app.delete("/:id", mdAuth.verifyToken, (request, response) => {
   var id = request.params.id;
 
-  User.findByIdAndRemove(id, (err, userDeleted) => {
+  Hospital.findByIdAndRemove(id, (err, hospitalDeleted) => {
     if (err) {
       return response.status(500).json({
         ok: false,
@@ -131,17 +128,17 @@ app.delete("/:id", mdAuth.verifyToken, (request, response) => {
       });
     }
 
-    if (!userDeleted) {
+    if (!hospitalDeleted) {
       return response.status(400).json({
         ok: false,
-        message: "User not found",
-        errors: { message: "User not found" },
+        message: "Hospital not found",
+        errors: { message: "Hospital not found" },
       });
     }
 
     response.status(200).json({
       ok: true,
-      body: userDeleted,
+      body: hospitalDeleted,
       message: "OK",
     });
   });

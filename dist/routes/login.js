@@ -2,7 +2,7 @@ var express = require("express");
 var bcrypt = require("bcryptjs");
 var jwt = require('jsonwebtoken');
 var app = express();
-var User = require("../models/user");
+var User = require("../models/usuario");
 var SEED = require('../config/config').SEED;
 
 app.post("/", (request, response) => {
@@ -13,7 +13,7 @@ app.post("/", (request, response) => {
       return response.status(500).json({
         ok: false,
         message: "Internal Server Error",
-        errors: err,
+        errors: err
       });
     }
 
@@ -21,7 +21,7 @@ app.post("/", (request, response) => {
       return response.status(400).json({
         ok: false,
         message: "Invalid Credentials",
-        errors: err,
+        errors: err
       });
     }
 
@@ -29,7 +29,7 @@ app.post("/", (request, response) => {
       return response.status(400).json({
         ok: false,
         message: "Invalid Credentials",
-        errors: err,
+        errors: err
       });
     }
 
@@ -37,7 +37,7 @@ app.post("/", (request, response) => {
     user.password = ":)";
 
     var token = jwt.sign({ user: user }, SEED, {
-      expiresIn: 14400,
+      expiresIn: 14400
     });
 
     response.status(200).json({
@@ -45,7 +45,7 @@ app.post("/", (request, response) => {
       message: "OK",
       body: user,
       id: user.id,
-      token: token,
+      token: token
     });
   });
 });

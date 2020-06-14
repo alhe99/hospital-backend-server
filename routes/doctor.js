@@ -1,20 +1,22 @@
 var express = require("express");
-var bcrypt = require("bcryptjs");
-var mdAuth = require("../middlewares/authentication");
 var app = express();
-var User = require("../models/user");
+
+var Doctor = require("../models/doctor");
+var mdAuth = require("../middlewares/authentication");
 
 //Routes
 //===============================
-//GET USERS
+//GET DOCTORS
 //===============================
 app.get("/", mdAuth.verifyToken, (request, response, next) => {
   var from = Number(request.query.from) || 0;
 
-  User.find({}, "name email img role")
+  Doctor.find({})
     .skip(from)
     .limit(5)
-    .exec((err, users) => {
+    .populate("user", "name email")
+    .populate("hospital")
+    .exec((err, doctors) => {
       if (err) {
         return response.status(500).json({
           ok: false,
@@ -23,10 +25,10 @@ app.get("/", mdAuth.verifyToken, (request, response, next) => {
         });
       }
 
-      User.count({}, (err, count) => {
+      Doctor.count({}, (err, count) => {
         response.status(200).json({
           ok: true,
-          users: users,
+          doctors: doctors,
           total: count,
           message: "OK",
         });
@@ -35,70 +37,19 @@ app.get("/", mdAuth.verifyToken, (request, response, next) => {
 });
 
 //===============================
-//UPDATE USER
-//===============================
-
-app.put("/:id", mdAuth.verifyToken, (request, response) => {
-  var id = request.params.id;
-
-  User.findById(id, (err, user) => {
-    var body = request.body;
-
-    if (err) {
-      return response.status(500).json({
-        ok: false,
-        message: "Error in search user",
-        errors: err,
-      });
-    }
-
-    if (!user) {
-      return response.status(400).json({
-        ok: false,
-        message: `User ${id}, not found!`,
-        errors: { message: "User not found" },
-      });
-    }
-
-    user.name = body.name;
-    user.email = body.email;
-    user.role = body.role;
-
-    user.save((err, userUpdated) => {
-      if (err) {
-        return response.status(400).json({
-          ok: false,
-          message: "Error in update user",
-          errors: err,
-        });
-      }
-
-      userUpdated.password = ":)";
-
-      response.status(200).json({
-        ok: true,
-        body: userUpdated,
-        message: "OK",
-      });
-    });
-  });
-});
-
-//===============================
-//CREATE USER
+//CREATE DOCTOR
 //===============================
 
 app.post("/", mdAuth.verifyToken, (request, response) => {
   var body = request.body;
-  var user = new User({
+  var doctor = new Doctor({
     name: body.name,
-    email: body.email,
-    password: bcrypt.hashSync(body.password, 10),
     img: body.img,
-    role: body.role,
+    user: body.user,
+    hospital: body.hospital,
   });
 
-  user.save((err, newUser) => {
+  doctor.save((err, newDoctor) => {
     if (err) {
       return response.status(400).json({
         ok: false,
@@ -109,20 +60,69 @@ app.post("/", mdAuth.verifyToken, (request, response) => {
 
     response.status(201).json({
       ok: true,
-      body: newUser,
+      body: newDoctor,
       message: "OK",
     });
   });
 });
 
 //===============================
-//DELETE USER
+//UPDATE HOSPITAL
+//===============================
+
+app.put("/:id", mdAuth.verifyToken, (request, response) => {
+  var id = request.params.id;
+
+  Doctor.findById(id, (err, doctor) => {
+    var body = request.body;
+
+    if (err) {
+      return response.status(500).json({
+        ok: false,
+        message: "Error in search Doctor",
+        errors: err,
+      });
+    }
+
+    if (!doctor) {
+      return response.status(400).json({
+        ok: false,
+        message: `Doctor ${id}, not found!`,
+        errors: { message: "Doctor not found" },
+      });
+    }
+
+    doctor.name = body.name;
+    doctor.img = body.img;
+    doctor.user = body.user;
+    doctor.hospital = body.hospital;
+
+    doctor.save((err, doctorUpdated) => {
+      if (err) {
+        return response.status(400).json({
+          ok: false,
+          message: "Error in update Doctor",
+          errors: err,
+        });
+      }
+
+      response.status(200).json({
+        ok: true,
+        body: doctorUpdated,
+        message: "OK",
+      });
+    });
+  });
+});
+
+//===============================
+//DELETE DOCTOR
 //===============================
 
 app.delete("/:id", mdAuth.verifyToken, (request, response) => {
   var id = request.params.id;
 
-  User.findByIdAndRemove(id, (err, userDeleted) => {
+  Doctor.findOneAndDelete(id, (err, doctorDeleted) => {
     if (err) {
       return response.status(500).json({
         ok: false,
@@ -131,17 +131,17 @@ app.delete("/:id", mdAuth.verifyToken, (request, response) => {
       });
     }
 
-    if (!userDeleted) {
+    if (!doctorDeleted) {
       return response.status(400).json({
         ok: false,
-        message: "User not found",
-        errors: { message: "User not found" },
+        message: "Doctor not found",
+        errors: { message: "Doctor not found" },
       });
     }
 
     response.status(200).json({
       ok: true,
-      body: userDeleted,
+      body: doctorDeleted,
       message: "OK",
     });
   });
