@@ -19,6 +19,7 @@ var userSchema = new Schema({
     default: "USER_ROLE",
     enum: validRoles,
   },
+  google: { type: Boolean, required: true, default: false }
 });
 
 userSchema.plugin(uniqueValidator, { message: "{PATH} can not be duplicated" });
