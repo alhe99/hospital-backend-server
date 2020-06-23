@@ -4,7 +4,7 @@ var fs = require("fs");
 var mdAuth = require("../middlewares/authentication");
 
 //Routes
-app.get("/:type/:img", mdAuth.verifyToken, (request, response, next) => {
+app.get("/:type/:img", (request, response, next) => {
   var type = request.params.type;
   var img = request.params.img;
 
@@ -12,11 +12,9 @@ app.get("/:type/:img", mdAuth.verifyToken, (request, response, next) => {
   var path;
 
   fs.exists(folder, (exist) => {
-    if (!exist) 
-      path = "/assets/noimage.jpg";
-    else
-      path = `/uploads/${type}/${img}`;
-    
+    if (!exist) path = "/assets/noimage.jpg";
+    else path = `/uploads/${type}/${img}`;
+
     response.sendFile(`${process.cwd()}${path}`);
   });
 });

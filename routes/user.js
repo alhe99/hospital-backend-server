@@ -88,7 +88,7 @@ app.put("/:id", mdAuth.verifyToken, (request, response) => {
 //CREATE USER
 //===============================
 
-app.post("/", mdAuth.verifyToken, (request, response) => {
+app.post("/", (request, response) => {
   var body = request.body;
   var user = new User({
     name: body.name,

@@ -55,16 +55,16 @@ app.post("/google", (request, response) => {
               token: token,
             });
           }
-        }else{
+        } else {
           var newUser = new User();
 
           newUser.name = payload.name;
           newUser.email = payload.email;
-          newUser.password = ':)';
+          newUser.password = ":)";
           newUser.img = payload.picture;
           newUser.google = true;
 
-          newUser.save((err,savedUser) =>{
+          newUser.save((err, savedUser) => {
             if (err) {
               response.status(500).json({
                 ok: false,
@@ -96,6 +96,7 @@ app.post("/google", (request, response) => {
       });
     });
 });
+
 //======================================
 //SIMPLE AUTH
 //======================================
@@ -144,4 +145,16 @@ app.post("/", (request, response) => {
   });
 });
 
+var mdAuth = require("../middlewares/authentication");
+
+app.post("/token/refresh", mdAuth.verifyToken, (request, response) => {
+  var token = jwt.sign({ user: request.user }, SEED, {
+    expiresIn: 14400,
+  });
+
+  response.status(200).json({
+    ok: true,
+    token: token,
+  });
+});
 module.exports = app;
